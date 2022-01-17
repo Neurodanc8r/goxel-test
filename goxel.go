@@ -45,12 +45,11 @@ func main() {
 		"Электроэнергия",
 	}
 
-	
 	type Flat struct {
 		number int
-		owner string
-		area float64
-		power int
+		owner  string
+		area   float64
+		power  int
 	}
 
 	type House struct {
