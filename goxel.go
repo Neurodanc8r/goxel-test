@@ -45,6 +45,18 @@ func main() {
 		"Электроэнергия",
 	}
 
+	
+	type Flat struct {
+		number int
+		owner string
+		area float64
+		power int
+	}
+
+	type House struct {
+		flat []Flat
+	}
+
 	//  Получаем значения тарифов и формируем карту [Тариф: значение]
 	tariffs := make(map[string]float64)
 
@@ -60,7 +72,7 @@ func main() {
 
 	// Для проверки печатаем тарифы на экран
 	for idx, el := range tariffs {
-		fmt.Println(idx, el)
+		fmt.Println(idx, "\t", el)
 	}
 
 	//-----------------------------------------------------------------------------------------
@@ -80,8 +92,14 @@ func main() {
 		return
 	}
 
+	var CurrentFlat Flat
+
+	// Перебираем строки, заносим в структуру и её в структуру общую
 	for _, rows := range rows {
-		fmt.Println(rows[0], rows[1], rows[4], rows[5])
+		CurrentFlat.number, _ = strconv.Atoi(rows[0])
+		CurrentFlat.owner = rows[1] + " " + rows[2] + " " + rows[3]
+		CurrentFlat.area, _ = strconv.ParseFloat(rows[4], 64)
+		fmt.Println(CurrentFlat)
 	}
 	//
 	// // Разбираем каждую строку и вносим значения тарифов в выходную таблицу
