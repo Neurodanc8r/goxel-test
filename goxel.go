@@ -15,6 +15,39 @@ func main() {
 		log.Fatal(err)
 	}
 
+	var month int
+	var month_cell int
+
+	fmt.Println("Введите номер месяца, на который делаем расчет:")
+	fmt.Println("-----------------")
+	fmt.Println("1  - Январь")
+	fmt.Println("2  - Февраль")
+	fmt.Println("3  - Март")
+	fmt.Println("4  - Апрель")
+	fmt.Println("5  - Май")
+	fmt.Println("6  - Июнь")
+	fmt.Println("7  - Июль")
+	fmt.Println("8  - Август")
+	fmt.Println("9  - Сентябрь")
+	fmt.Println("10 - Октябрь")
+	fmt.Println("11 - Ноябрь")
+	fmt.Println("12 - Декабрь")
+	fmt.Println("-----------------")
+	fmt.Print("::>")
+	fmt.Scanln(&month)
+	fmt.Println()
+
+	month_index := [13]int {14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26}
+
+	if month < 1 || month > 12 {
+		fmt.Println("ERROR :: Неправильно введён месяц!")
+		fmt.Println()
+	} else {
+		fmt.Println("OK")
+		fmt.Println()
+		month_cell = month_index[month]
+	}
+
 	tariff_cells := [6]string{
 		"D2504",
 		"D2505",
@@ -67,14 +100,18 @@ func main() {
 
 	var CurrentFlat Flat
 	var House []Flat
+	var power, current_month, prev_month int
 
 	// Перебираем строки, заносим в структуру и её в структуру общую
 	for idx, rows := range rows {
 		if idx < 129 {
+			current_month, _ = strconv.Atoi(rows[month_cell])
+			prev_month, _ = strconv.Atoi(rows[month_cell - 1])
+			power = current_month - prev_month
 			CurrentFlat.number, _ = strconv.Atoi(rows[0])
 			CurrentFlat.owner = rows[1] + " " + rows[2] + " " + rows[3]
 			CurrentFlat.area, _ = strconv.ParseFloat(rows[4], 64)
-			CurrentFlat.power = 0
+			CurrentFlat.power = power
 			fmt.Println(CurrentFlat)
 			House = append(House, CurrentFlat)
 		} else {
