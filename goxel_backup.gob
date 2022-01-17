@@ -15,6 +15,17 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// szs_file, err := excelize.OpenFile("SZS1.xlsx")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// rec_file, err := excelize.OpenFile("SZS_rec.xlsx")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	//  Создаем массив с ячейками в нашей таблице, в которой хранятся тарифы
 	tariff_cells := [6]string{
 		"D2504",
 		"D2505",
@@ -24,6 +35,7 @@ func main() {
 		"B2499",
 	}
 
+	//  Создаем массив с названиями тарифов
 	tariff_names := [6]string{
 		"ОДН на ХВС",
 		"ОДН на ГВС",
@@ -33,6 +45,7 @@ func main() {
 		"Электроэнергия",
 	}
 
+	//  Получаем значения тарифов и формируем карту [Тариф: значение]
 	tariffs := make(map[string]float64)
 
 	for idx, el := range tariff_cells {
@@ -45,13 +58,23 @@ func main() {
 		}
 	}
 
-	// -- Для проверки печатаем тарифы на экран
+	// Для проверки печатаем тарифы на экран
 	for idx, el := range tariffs {
 		fmt.Println(idx, "\t", el)
 	}
 	fmt.Println()
 
-	// Перебираем входной документ построчно
+	//-----------------------------------------------------------------------------------------
+	// // Формируем карту нужных полей в выходном документе
+	// out_col := map[string]string{
+	// 	"FACTP":   "L",
+	// 	"TARIF":   "N",
+	// 	"PRIZN":   "P",
+	// 	"FACTOP":  "V",
+	// 	"FACTOP2": "W",
+	// }
+
+	// Перебираем выходной документ построчно
 	rows, err := lastochka_file.GetRows("Жильцы")
 	if err != nil {
 		fmt.Println(err)
@@ -64,7 +87,7 @@ func main() {
 		area   float64
 		power  int
 	}
-
+	
 	var CurrentFlat Flat
 	var House []Flat
 
@@ -84,33 +107,6 @@ func main() {
 	fmt.Println("-=+++++=-")
 	fmt.Println()
 	fmt.Println(House[33])
-
-	// szs_file, err := excelize.OpenFile("SZS1.xlsx")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// rec_file, err := excelize.OpenFile("SZS_rec.xlsx")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	//  Создаем массив с ячейками в нашей таблице, в которой хранятся тарифы
-
-	//  Создаем массив с названиями тарифов
-
-	//  Получаем значения тарифов и формируем карту [Тариф: значение]
-
-	//-----------------------------------------------------------------------------------------
-	// // Формируем карту нужных полей в выходном документе
-	// out_col := map[string]string{
-	// 	"FACTP":   "L",
-	// 	"TARIF":   "N",
-	// 	"PRIZN":   "P",
-	// 	"FACTOP":  "V",
-	// 	"FACTOP2": "W",
-	// }
-
 	//
 	// // Разбираем каждую строку и вносим значения тарифов в выходную таблицу
 	// for idx, row := range rows {
