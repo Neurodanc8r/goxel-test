@@ -52,9 +52,9 @@ func main() {
 		power  int
 	}
 
-	type House struct {
-		flat []Flat
-	}
+	// type House struct {
+	// 	flat []Flat
+	// }
 
 	//  Получаем значения тарифов и формируем карту [Тариф: значение]
 	tariffs := make(map[string]float64)
@@ -73,6 +73,7 @@ func main() {
 	for idx, el := range tariffs {
 		fmt.Println(idx, "\t", el)
 	}
+	fmt.Println()
 
 	//-----------------------------------------------------------------------------------------
 	// // Формируем карту нужных полей в выходном документе
@@ -92,14 +93,24 @@ func main() {
 	}
 
 	var CurrentFlat Flat
+	var House []Flat
 
 	// Перебираем строки, заносим в структуру и её в структуру общую
-	for _, rows := range rows {
-		CurrentFlat.number, _ = strconv.Atoi(rows[0])
-		CurrentFlat.owner = rows[1] + " " + rows[2] + " " + rows[3]
-		CurrentFlat.area, _ = strconv.ParseFloat(rows[4], 64)
-		fmt.Println(CurrentFlat)
+	for idx, rows := range rows {
+		if idx < 129 {
+			CurrentFlat.number, _ = strconv.Atoi(rows[0])
+			CurrentFlat.owner = rows[1] + " " + rows[2] + " " + rows[3]
+			CurrentFlat.area, _ = strconv.ParseFloat(rows[4], 64)
+			CurrentFlat.power = 0
+			fmt.Println(CurrentFlat)
+			House = append(House, CurrentFlat)
+		} else {
+			break
+		}
 	}
+	fmt.Println("-=+++++=-")
+	fmt.Println()
+	fmt.Println(House[33])
 	//
 	// // Разбираем каждую строку и вносим значения тарифов в выходную таблицу
 	// for idx, row := range rows {
