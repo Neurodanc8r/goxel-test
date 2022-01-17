@@ -45,17 +45,6 @@ func main() {
 		"Электроэнергия",
 	}
 
-	type Flat struct {
-		number int
-		owner  string
-		area   float64
-		power  int
-	}
-
-	// type House struct {
-	// 	flat []Flat
-	// }
-
 	//  Получаем значения тарифов и формируем карту [Тариф: значение]
 	tariffs := make(map[string]float64)
 
@@ -92,6 +81,13 @@ func main() {
 		return
 	}
 
+	type Flat struct {
+		number int
+		owner  string
+		area   float64
+		power  int
+	}
+	
 	var CurrentFlat Flat
 	var House []Flat
 
