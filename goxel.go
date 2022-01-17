@@ -81,7 +81,7 @@ func main() {
 	}
 
 	for _, rows := range rows {
-		fmt.Println(rows[0], rows[1], rows[4])
+		fmt.Println(rows[0], rows[1], rows[4], rows[5])
 	}
 	//
 	// // Разбираем каждую строку и вносим значения тарифов в выходную таблицу
