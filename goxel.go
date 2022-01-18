@@ -37,7 +37,7 @@ func main() {
 	fmt.Scanln(&month)
 	fmt.Println()
 
-	month_index := [13]int {14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26}
+	month_index := [13]int{14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26}
 
 	if month < 1 || month > 12 {
 		fmt.Println("ERROR :: Неправильно введён месяц!")
@@ -106,13 +106,13 @@ func main() {
 	for idx, rows := range rows {
 		if idx < 129 {
 			current_month, _ = strconv.Atoi(rows[month_cell])
-			prev_month, _ = strconv.Atoi(rows[month_cell - 1])
+			prev_month, _ = strconv.Atoi(rows[month_cell-1])
 			power = current_month - prev_month
 			CurrentFlat.number, _ = strconv.Atoi(rows[0])
 			CurrentFlat.owner = rows[1] + " " + rows[2] + " " + rows[3]
 			CurrentFlat.area, _ = strconv.ParseFloat(rows[4], 64)
 			CurrentFlat.power = power
-			fmt.Println(CurrentFlat)
+			//fmt.Println(CurrentFlat)
 			House = append(House, CurrentFlat)
 		} else {
 			break
@@ -120,17 +120,17 @@ func main() {
 	}
 	fmt.Println("-=+++++=-")
 	fmt.Println()
-	fmt.Println(House[33])
+	//fmt.Println(House[33])
 
 	// szs_file, err := excelize.OpenFile("SZS1.xlsx")
 	// if err != nil {
 	// 	log.Fatal(err)
 	// }
 
-	// rec_file, err := excelize.OpenFile("SZS_rec.xlsx")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+	rec_file, err := excelize.OpenFile("SZS_rec.xlsx")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	//  Создаем массив с ячейками в нашей таблице, в которой хранятся тарифы
 
@@ -140,36 +140,74 @@ func main() {
 
 	//-----------------------------------------------------------------------------------------
 	// // Формируем карту нужных полей в выходном документе
-	// out_col := map[string]string{
-	// 	"FACTP":   "L",
-	// 	"TARIF":   "N",
-	// 	"PRIZN":   "P",
-	// 	"FACTOP":  "V",
-	// 	"FACTOP2": "W",
-	// }
+	out_col := map[string]string{
+		"FACTP":   "L",
+		"TARIF":   "N",
+		"PRIZN":   "P",
+		"FACTOP":  "V",
+		"FACTOP2": "W",
+	}
 
 	//
+	out_rows, err := rec_file.GetRows("Лист1")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	// // Разбираем каждую строку и вносим значения тарифов в выходную таблицу
-	// for idx, row := range rows {
-	// 	cell_N := (out_col["TARIF"] + strconv.Itoa(idx+1))
-	// 	if row[7] == "ОДН на ХВС" {
-	// 		rec_file.SetCellValue("Лист1", cell_N, tariffs["ОДН на ХВС"])
-	// 	} else if row[7] == "ОДН на ГВС" {
-	// 		rec_file.SetCellValue("Лист1", cell_N, tariffs["ОДН на ГВС"])
-	// 	} else if row[7] == "ОДН на водоотведение" {
-	// 		rec_file.SetCellValue("Лист1", cell_N, tariffs["ОДН на водоотв"])
-	// 	} else if row[7] == "Электрическая энергия на общедомовые нужды" {
-	// 		rec_file.SetCellValue("Лист1", cell_N, tariffs["ОДН на электро"])
-	// 	} else if row[7] == "Содержание жилья" {
-	// 		rec_file.SetCellValue("Лист1", cell_N, tariffs["Содержание"])
-	// 	} else if row[7] == "Э: МЖД с ЦГВС и электроплитами" {
-	// 		rec_file.SetCellValue("Лист1", cell_N, tariffs["Электроэнергия"])
-	// 	}
-	// }
+	var kv int
+
+	for idx, row := range out_rows {
+		cell_Tarif := (out_col["TARIF"] + strconv.Itoa(idx+1))
+		cell_Factp := (out_col["FACTP"] + strconv.Itoa(idx+1))
+		cell_Factop := (out_col["FACTOP"] + strconv.Itoa(idx+1))
+		cell_Factop2 := (out_col["FACTOP2"] + strconv.Itoa(idx+1))
+		cell_Prizn := (out_col["PRIZN"] + strconv.Itoa(idx+1))
+		// Ячейка с индексом 5 - номер квартиры в выходном документе
+		kv, _ = strconv.Atoi(row[5])
+		fmt.Println(row[5])
+		if row[7] == "ОДН на ХВС" {
+			rec_file.SetCellValue("Лист1", cell_Tarif, tariffs["ОДН на ХВС"])
+			rec_file.SetCellValue("Лист1", cell_Factp, (tariffs["ОДН на ХВС"] * House[kv].area))
+			rec_file.SetCellValue("Лист1", cell_Factop, (tariffs["ОДН на ХВС"] * House[kv].area))
+			rec_file.SetCellValue("Лист1", cell_Factop2, (tariffs["ОДН на ХВС"] * House[kv].area))
+			rec_file.SetCellValue("Лист1", cell_Prizn, 1)
+		} else if row[7] == "ОДН на ГВС" {
+			rec_file.SetCellValue("Лист1", cell_Tarif, tariffs["ОДН на ГВС"])
+			rec_file.SetCellValue("Лист1", cell_Factp, (tariffs["ОДН на ГВС"] * House[kv].area))
+			rec_file.SetCellValue("Лист1", cell_Factop, (tariffs["ОДН на ГВС"] * House[kv].area))
+			rec_file.SetCellValue("Лист1", cell_Factop2, (tariffs["ОДН на ГВС"] * House[kv].area))
+			rec_file.SetCellValue("Лист1", cell_Prizn, 1)
+		} else if row[7] == "ОДН на водоотведение" {
+			rec_file.SetCellValue("Лист1", cell_Tarif, tariffs["ОДН на водоотв"])
+			rec_file.SetCellValue("Лист1", cell_Factp, (tariffs["ОДН на водоотв"] * House[kv].area))
+			rec_file.SetCellValue("Лист1", cell_Factop, (tariffs["ОДН на водоотв"] * House[kv].area))
+			rec_file.SetCellValue("Лист1", cell_Factop2, (tariffs["ОДН на водоотв"] * House[kv].area))
+			rec_file.SetCellValue("Лист1", cell_Prizn, 1)
+		} else if row[7] == "Электрическая энергия на общедомовые нужды" {
+			rec_file.SetCellValue("Лист1", cell_Tarif, tariffs["ОДН на электро"])
+			rec_file.SetCellValue("Лист1", cell_Factp, (tariffs["ОДН на электро"] * House[kv].area))
+			rec_file.SetCellValue("Лист1", cell_Factop, (tariffs["ОДН на электро"] * House[kv].area))
+			rec_file.SetCellValue("Лист1", cell_Factop2, (tariffs["ОДН на электро"] * House[kv].area))
+			rec_file.SetCellValue("Лист1", cell_Prizn, 1)
+		} else if row[7] == "Содержание жилья" {
+			rec_file.SetCellValue("Лист1", cell_Tarif, tariffs["Содержание"])
+			rec_file.SetCellValue("Лист1", cell_Factp, (tariffs["Содержание"] * House[kv].area))
+			rec_file.SetCellValue("Лист1", cell_Factop, (tariffs["Содержание"] * House[kv].area))
+			rec_file.SetCellValue("Лист1", cell_Factop2, (tariffs["Содержание"] * House[kv].area))
+			rec_file.SetCellValue("Лист1", cell_Prizn, 1)
+		} else if row[7] == "Э: МЖД с ЦГВС и электроплитами" {
+			rec_file.SetCellValue("Лист1", cell_Tarif, tariffs["Электроэнергия"])
+			rec_file.SetCellValue("Лист1", cell_Factp, (tariffs["Электроэнергия"] * float64(House[kv].power)))
+			rec_file.SetCellValue("Лист1", cell_Factop, (tariffs["Электроэнергия"] * float64(House[kv].power)))
+			rec_file.SetCellValue("Лист1", cell_Factop2, (tariffs["Электроэнергия"] * float64(House[kv].power)))
+			rec_file.SetCellValue("Лист1", cell_Prizn, 1)
+		}
+	}
 	//
 	// //  Сохраняем выходной файл
-	// if err := rec_file.SaveAs("Book1.xlsx"); err != nil {
-	// 	fmt.Println(err)
-	// }
+	if err := rec_file.SaveAs("Book1.xlsx"); err != nil {
+		fmt.Println(err)
+	}
 
 }
