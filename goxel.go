@@ -37,7 +37,8 @@ func main() {
 	fmt.Scanln(&month)
 	fmt.Println()
 
-	month_index := [13]int{14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26}
+	//month_index := [13]int{14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26}
+	month_index := [13]int{15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27}
 
 	if month < 1 || month > 12 {
 		fmt.Println("ERROR :: Неправильно введён месяц!")
@@ -103,29 +104,34 @@ func main() {
 	var power, current_month, prev_month int
 
 	// Перебираем строки, заносим в структуру и её в структуру общую
-	for idx, rows := range rows {
+	for idx, row := range rows {
 		if idx < 129 {
-			current_month, _ = strconv.Atoi(rows[month_cell])
-			prev_month, _ = strconv.Atoi(rows[month_cell-1])
+			current_month, _ = strconv.Atoi(row[month_cell])
+			prev_month, _ = strconv.Atoi(row[month_cell-1])
 			power = current_month - prev_month
-			CurrentFlat.number, _ = strconv.Atoi(rows[0])
-			CurrentFlat.owner = rows[1] + " " + rows[2] + " " + rows[3]
-			CurrentFlat.area, _ = strconv.ParseFloat(rows[4], 64)
+			CurrentFlat.number, _ = strconv.Atoi(row[0])
+			CurrentFlat.owner = row[1] + " " + row[2] + " " + row[3]
+			CurrentFlat.area, _ = strconv.ParseFloat(row[4], 64)
 			CurrentFlat.power = power
 			//fmt.Println(CurrentFlat)
 			House = append(House, CurrentFlat)
+			if idx == 20 {
+				//fmt.Printf("Последнее показание RAW: %v\t Предыдущее показание RAW: %v\n", row[15], row[14])
+				fmt.Printf("Последнее показание: %v\t Предыдущее показание: %v\n", current_month, prev_month)
+				fmt.Printf("Кв: %v\t Владелец: %v\t Площадь: %v\t кВт: %v\n", House[20].number, House[20].owner, House[20].area, House[20].power)
+			}
 		} else {
 			break
 		}
 	}
 	fmt.Println("-=+++++=-")
 	fmt.Println()
-	//fmt.Println(House[33])
+	fmt.Printf("Кв: %v\t тек. показ: -- пред. показ: -- кол-во кВт: %v\n", House[20].number, House[20].power)
 
-	// szs_file, err := excelize.OpenFile("SZS1.xlsx")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+	// // szs_file, err := excelize.OpenFile("SZS1.xlsx")
+	// // if err != nil {
+	// // 	log.Fatal(err)
+	// // }
 
 	rec_file, err := excelize.OpenFile("SZS_rec.xlsx")
 	if err != nil {
@@ -202,6 +208,10 @@ func main() {
 			rec_file.SetCellValue("Лист1", cell_Factop, (tariffs["Электроэнергия"] * float64(House[kv].power)))
 			rec_file.SetCellValue("Лист1", cell_Factop2, (tariffs["Электроэнергия"] * float64(House[kv].power)))
 			rec_file.SetCellValue("Лист1", cell_Prizn, 1)
+		} else {
+			if idx > 0 {
+				rec_file.SetCellValue("Лист1", cell_Prizn, 1)
+			}
 		}
 	}
 	//
