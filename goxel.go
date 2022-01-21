@@ -8,18 +8,13 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-func main() {
-	//  Открываем необходимые файлы (Ласточка, льготники и копию льготников(надо ли?))
-	lastochka_file, err := excelize.OpenFile("Ласточка 2021.xlsm")
-	if err != nil {
-		log.Fatal(err)
-	}
+// Функция выбора месяца, возвращяет ячейку таблицы для дальнейшей обработки
+func select_month_cell() int {
 
 	var month int
-	var month_cell int
 
 	fmt.Println("Введите номер месяца, на который делаем расчет:")
-	fmt.Println("-----------------")
+	fmt.Println("________________")
 	fmt.Println("1  - Январь")
 	fmt.Println("2  - Февраль")
 	fmt.Println("3  - Март")
@@ -32,23 +27,24 @@ func main() {
 	fmt.Println("10 - Октябрь")
 	fmt.Println("11 - Ноябрь")
 	fmt.Println("12 - Декабрь")
-	fmt.Println("-----------------")
-	fmt.Print("::>")
+	fmt.Println("================")
+	fmt.Print("-> ")
 	fmt.Scanln(&month)
 	fmt.Println()
 
-	//month_index := [13]int{14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26}
-	month_index := [13]int{15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27}
-
-	if month < 1 || month > 12 {
-		fmt.Println("ERROR :: Неправильно введён месяц!")
-		fmt.Println()
-	} else {
-		fmt.Println("OK")
-		fmt.Println()
-		month_cell = month_index[month]
+	for (month < 1) || (month > 12) {
+		fmt.Println("ERROR: Неправильно введён месяц!")
+		fmt.Print("-> ")
+		fmt.Scanln(&month)
 	}
 
+	month_index := [13]int{15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27}
+
+	return month_index[month]
+}
+
+// Функция генерации тарифов в 'map'
+func generate_tariffs(file *excelize.File) map[string]float64 {
 	tariff_cells := [6]string{
 		"D2504",
 		"D2505",
@@ -67,36 +63,36 @@ func main() {
 		"Электроэнергия",
 	}
 
-	tariffs := make(map[string]float64)
+	tariff := make(map[string]float64)
 
 	for idx, el := range tariff_cells {
-		cell, err := lastochka_file.GetCellValue("Квитанции_чистые", el)
+		cell, err := file.GetCellValue("Квитанции_чистые", el)
 		if err != nil {
 			log.Fatal(err)
 		}
 		if cellfloat, err := strconv.ParseFloat(cell, 64); err == nil {
-			tariffs[tariff_names[idx]] = cellfloat
+			tariff[tariff_names[idx]] = cellfloat
+		} else {
+			log.Fatal(err)
 		}
 	}
+	fmt.Printf("INFO: Чтение и формирование тарифов \t- ОК\n")
+	return tariff
+}
 
-	// -- Для проверки печатаем тарифы на экран
-	for idx, el := range tariffs {
-		fmt.Println(idx, "\t", el)
-	}
-	fmt.Println()
+type Flat struct {
+	number int
+	owner  string
+	area   float64
+	power  int
+}
 
+// Функция читает инфо из входного файла и формирует срез структур 'House'
+func read_gen_flat_info(file *excelize.File, month_cell int) []Flat {
 	// Перебираем входной документ построчно
-	rows, err := lastochka_file.GetRows("Жильцы")
+	rows, err := file.GetRows("Жильцы")
 	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	type Flat struct {
-		number int
-		owner  string
-		area   float64
-		power  int
+		log.Fatal(err)
 	}
 
 	var CurrentFlat Flat
@@ -105,46 +101,58 @@ func main() {
 
 	// Перебираем строки, заносим в структуру и её в структуру общую
 	for idx, row := range rows {
-		if idx < 129 {
-			current_month, _ = strconv.Atoi(row[month_cell])
-			prev_month, _ = strconv.Atoi(row[month_cell-1])
-			power = current_month - prev_month
-			CurrentFlat.number, _ = strconv.Atoi(row[0])
-			CurrentFlat.owner = row[1] + " " + row[2] + " " + row[3]
-			CurrentFlat.area, _ = strconv.ParseFloat(row[4], 64)
-			CurrentFlat.power = power
-			//fmt.Println(CurrentFlat)
+		if idx == 0 {
+			CurrentFlat.number = 0
+			CurrentFlat.owner = "void"
+			CurrentFlat.area = 0
+			CurrentFlat.power = 0
 			House = append(House, CurrentFlat)
-			if idx == 20 {
-				//fmt.Printf("Последнее показание RAW: %v\t Предыдущее показание RAW: %v\n", row[15], row[14])
-				fmt.Printf("Последнее показание: %v\t Предыдущее показание: %v\n", current_month, prev_month)
-				fmt.Printf("Кв: %v\t Владелец: %v\t Площадь: %v\t кВт: %v\n", House[20].number, House[20].owner, House[20].area, House[20].power)
+			continue
+		}
+		if idx < 129 {
+			current_month, err = strconv.Atoi(row[month_cell])
+			if err != nil {
+				if row[month_cell] == "" {
+					current_month = 0
+				} else {
+					fmt.Println("ОШИБКА: текущий месяц", idx, err)
+				}
 			}
+			prev_month, err = strconv.Atoi(row[month_cell-1])
+			if err != nil {
+				if row[month_cell-1] == "" {
+					prev_month = 0
+				} else {
+					fmt.Println("ОШИБКА: пред. месяц", idx, err)
+				}
+			}
+			power = current_month - prev_month
+			if power < 0 {
+				fmt.Println("ОШИБКА: Отрицательное значение расхода э/энергии !!!")
+			}
+			CurrentFlat.number, err = strconv.Atoi(row[0])
+			if err != nil {
+				fmt.Println("Ошибка - номер квартиры")
+				log.Fatal(err)
+			}
+			CurrentFlat.owner = row[1] + " " + row[2] + " " + row[3]
+			CurrentFlat.area, err = strconv.ParseFloat(row[4], 64)
+			if err != nil {
+				log.Fatal(err)
+			}
+			CurrentFlat.power = power
+			House = append(House, CurrentFlat)
+
 		} else {
 			break
 		}
 	}
-	fmt.Println("-=+++++=-")
-	fmt.Println()
-	fmt.Printf("Кв: %v\t тек. показ: -- пред. показ: -- кол-во кВт: %v\n", House[20].number, House[20].power)
+	fmt.Printf("INFO: Чтение информации по квартирам \t- ОК\n")
+	return House
+}
 
-	// // szs_file, err := excelize.OpenFile("SZS1.xlsx")
-	// // if err != nil {
-	// // 	log.Fatal(err)
-	// // }
-
-	rec_file, err := excelize.OpenFile("SZS_rec.xlsx")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	//  Создаем массив с ячейками в нашей таблице, в которой хранятся тарифы
-
-	//  Создаем массив с названиями тарифов
-
-	//  Получаем значения тарифов и формируем карту [Тариф: значение]
-
-	//-----------------------------------------------------------------------------------------
+// Функция записи данных в выходной файл
+func record_out(rec_file *excelize.File, House []Flat, tariffs map[string]float64) {
 	// // Формируем карту нужных полей в выходном документе
 	out_col := map[string]string{
 		"FACTP":   "L",
@@ -154,14 +162,14 @@ func main() {
 		"FACTOP2": "W",
 	}
 
-	//
 	out_rows, err := rec_file.GetRows("Лист1")
 	if err != nil {
-		fmt.Println(err)
-		return
+		fmt.Println("ОШИБКА: Ошибка чтения выходного файла !")
+		log.Fatal(err)
 	}
 	// // Разбираем каждую строку и вносим значения тарифов в выходную таблицу
 	var kv int
+	var odn_hvs, odn_gvs, odn_voda, odn_electro, soderzh, electro float64
 
 	for idx, row := range out_rows {
 		cell_Tarif := (out_col["TARIF"] + strconv.Itoa(idx+1))
@@ -170,43 +178,84 @@ func main() {
 		cell_Factop2 := (out_col["FACTOP2"] + strconv.Itoa(idx+1))
 		cell_Prizn := (out_col["PRIZN"] + strconv.Itoa(idx+1))
 		// Ячейка с индексом 5 - номер квартиры в выходном документе
-		kv, _ = strconv.Atoi(row[5])
-		fmt.Println(row[5])
+		if row[5] == "KV" {
+			continue
+		} else {
+			kv, err = strconv.Atoi(row[5]) // Читаем номер квартиры
+			if err != nil {
+				fmt.Println("ОШИБКА: Ошибка чтения номера квартиры выходного файла !")
+				log.Fatal(err)
+			}
+		}
+
+		odn_hvs = tariffs["ОДН на ХВС"] * House[kv].area // Считаем ОДН на ХВС
+		if odn_hvs <= 0 {
+			fmt.Println("ОШИБКА: отрицательный или нулевой тариф ОДН на ХВС !")
+		}
+		odn_gvs = tariffs["ОДН на ГВС"] * House[kv].area // Считаем ОДН на ГВС
+		if odn_gvs <= 0 {
+			fmt.Println("ОШИБКА: отрицательный или нулевой тариф ОДН на ГВС !")
+		}
+		odn_voda = tariffs["ОДН на водоотв"] * House[kv].area // Считаем ОДН на водоотведение
+		if odn_voda <= 0 {
+			fmt.Println("ОШИБКА: отрицательный или нулевой тариф ОДН на водоотведение !")
+		}
+		odn_electro = tariffs["ОДН на электро"] * House[kv].area
+		if odn_electro <= 0 {
+			fmt.Println("ОШИБКА: отрицательный или нулевой тариф ОДН на э/энергию !")
+		}
+		soderzh, err = strconv.ParseFloat(fmt.Sprintf("%.2f", tariffs["Содержание"]*House[kv].area), 64)
+		if soderzh <= 0 {
+			fmt.Println("ОШИБКА: отрицательное или нулевое значение суммы на содержание жилья !")
+		}
+		if err != nil {
+			fmt.Println("ОШИБКА: Ошибка преобразования (округления) суммы на содержание жилья выходного файла !")
+			log.Fatal(err)
+		}
+		electro, err = strconv.ParseFloat(fmt.Sprintf("%.2f", tariffs["Электроэнергия"]*float64(House[kv].power)), 64)
+		if electro <= 0 {
+			fmt.Println("ОШИБКА: отрицательное или нулевое значение суммы потребленной э/энергии !")
+		}
+		if err != nil {
+			fmt.Println("ОШИБКА: Ошибка преобразования (округления) э/энергии выходного файла !")
+			log.Fatal(err)
+		}
+
 		if row[7] == "ОДН на ХВС" {
 			rec_file.SetCellValue("Лист1", cell_Tarif, tariffs["ОДН на ХВС"])
-			rec_file.SetCellValue("Лист1", cell_Factp, (tariffs["ОДН на ХВС"] * House[kv].area))
-			rec_file.SetCellValue("Лист1", cell_Factop, (tariffs["ОДН на ХВС"] * House[kv].area))
-			rec_file.SetCellValue("Лист1", cell_Factop2, (tariffs["ОДН на ХВС"] * House[kv].area))
+			rec_file.SetCellValue("Лист1", cell_Factp, odn_hvs)
+			rec_file.SetCellValue("Лист1", cell_Factop, odn_hvs)
+			rec_file.SetCellValue("Лист1", cell_Factop2, odn_hvs)
 			rec_file.SetCellValue("Лист1", cell_Prizn, 1)
 		} else if row[7] == "ОДН на ГВС" {
 			rec_file.SetCellValue("Лист1", cell_Tarif, tariffs["ОДН на ГВС"])
-			rec_file.SetCellValue("Лист1", cell_Factp, (tariffs["ОДН на ГВС"] * House[kv].area))
-			rec_file.SetCellValue("Лист1", cell_Factop, (tariffs["ОДН на ГВС"] * House[kv].area))
-			rec_file.SetCellValue("Лист1", cell_Factop2, (tariffs["ОДН на ГВС"] * House[kv].area))
+			rec_file.SetCellValue("Лист1", cell_Factp, odn_gvs)
+			rec_file.SetCellValue("Лист1", cell_Factop, odn_gvs)
+			rec_file.SetCellValue("Лист1", cell_Factop2, odn_gvs)
 			rec_file.SetCellValue("Лист1", cell_Prizn, 1)
 		} else if row[7] == "ОДН на водоотведение" {
 			rec_file.SetCellValue("Лист1", cell_Tarif, tariffs["ОДН на водоотв"])
-			rec_file.SetCellValue("Лист1", cell_Factp, (tariffs["ОДН на водоотв"] * House[kv].area))
-			rec_file.SetCellValue("Лист1", cell_Factop, (tariffs["ОДН на водоотв"] * House[kv].area))
-			rec_file.SetCellValue("Лист1", cell_Factop2, (tariffs["ОДН на водоотв"] * House[kv].area))
+			rec_file.SetCellValue("Лист1", cell_Factp, odn_voda)
+			rec_file.SetCellValue("Лист1", cell_Factop, odn_voda)
+			rec_file.SetCellValue("Лист1", cell_Factop2, odn_voda)
 			rec_file.SetCellValue("Лист1", cell_Prizn, 1)
 		} else if row[7] == "Электрическая энергия на общедомовые нужды" {
 			rec_file.SetCellValue("Лист1", cell_Tarif, tariffs["ОДН на электро"])
-			rec_file.SetCellValue("Лист1", cell_Factp, (tariffs["ОДН на электро"] * House[kv].area))
-			rec_file.SetCellValue("Лист1", cell_Factop, (tariffs["ОДН на электро"] * House[kv].area))
-			rec_file.SetCellValue("Лист1", cell_Factop2, (tariffs["ОДН на электро"] * House[kv].area))
+			rec_file.SetCellValue("Лист1", cell_Factp, odn_electro)
+			rec_file.SetCellValue("Лист1", cell_Factop, odn_electro)
+			rec_file.SetCellValue("Лист1", cell_Factop2, odn_electro)
 			rec_file.SetCellValue("Лист1", cell_Prizn, 1)
 		} else if row[7] == "Содержание жилья" {
 			rec_file.SetCellValue("Лист1", cell_Tarif, tariffs["Содержание"])
-			rec_file.SetCellValue("Лист1", cell_Factp, (tariffs["Содержание"] * House[kv].area))
-			rec_file.SetCellValue("Лист1", cell_Factop, (tariffs["Содержание"] * House[kv].area))
-			rec_file.SetCellValue("Лист1", cell_Factop2, (tariffs["Содержание"] * House[kv].area))
+			rec_file.SetCellValue("Лист1", cell_Factp, soderzh)
+			rec_file.SetCellValue("Лист1", cell_Factop, soderzh)
+			rec_file.SetCellValue("Лист1", cell_Factop2, soderzh)
 			rec_file.SetCellValue("Лист1", cell_Prizn, 1)
 		} else if row[7] == "Э: МЖД с ЦГВС и электроплитами" {
 			rec_file.SetCellValue("Лист1", cell_Tarif, tariffs["Электроэнергия"])
-			rec_file.SetCellValue("Лист1", cell_Factp, (tariffs["Электроэнергия"] * float64(House[kv].power)))
-			rec_file.SetCellValue("Лист1", cell_Factop, (tariffs["Электроэнергия"] * float64(House[kv].power)))
-			rec_file.SetCellValue("Лист1", cell_Factop2, (tariffs["Электроэнергия"] * float64(House[kv].power)))
+			rec_file.SetCellValue("Лист1", cell_Factp, electro)
+			rec_file.SetCellValue("Лист1", cell_Factop, electro)
+			rec_file.SetCellValue("Лист1", cell_Factop2, electro)
 			rec_file.SetCellValue("Лист1", cell_Prizn, 1)
 		} else {
 			if idx > 0 {
@@ -214,10 +263,46 @@ func main() {
 			}
 		}
 	}
-	//
-	// //  Сохраняем выходной файл
-	if err := rec_file.SaveAs("Book1.xlsx"); err != nil {
-		fmt.Println(err)
+	fmt.Printf("INFO: Запись в выходной файл \t\t- ОК\n")
+}
+
+func main() {
+	// Открываем входной файл с информацией (Ласточка) {новый будет Ласточка 2022_v1.xlsm}
+	lastochka_file, err := excelize.OpenFile("Ласточка 2021.xlsm")
+	if err != nil {
+		fmt.Println("ОШИБКА: Ошибка чтения входного файла ! (Ласточка)")
+		log.Fatal(err)
 	}
+
+	month_cell := select_month_cell() // Получаем месяц, с которым работаем
+
+	tariffs := generate_tariffs(lastochka_file) // Генерация 'map' с тарифами
+
+	House := read_gen_flat_info(lastochka_file, month_cell) // Получаем и храним в памяти информацию по квартирам
+
+	// Открываем выходной файл по льготникам
+	rec_file, err := excelize.OpenFile("SZS_rec.xlsx")
+	if err != nil {
+		fmt.Println("ОШИБКА: Ошибка чтения выходного файла ! (по льготникам)")
+		log.Fatal(err)
+	}
+
+	record_out(rec_file, House, tariffs) // Пишем в выходной файл (льготники)
+
+	// Сохраняем выходной файл
+	if err := rec_file.SaveAs("Book1.xlsx"); err != nil {
+		fmt.Println("ОШИБКА: Ошибка записи выходного файла ! (по льготникам)")
+		fmt.Println(err)
+	} else {
+		fmt.Printf("INFO: Сохранение выходного файла \t- OK\n\n")
+	}
+
+	// -- TEST -- Для проверки печатаем тарифы на экран
+	for idx, el := range tariffs {
+		fmt.Println(idx, "\t", el)
+	}
+	fmt.Println()
+	fmt.Println("Завершено успешно !")
+	fmt.Println("В поля фактической оплаты внесены значения оплаты начисленной. Учет задолженностей не ведется.")
 
 }
