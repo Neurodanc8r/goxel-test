@@ -8,18 +8,13 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-func main() {
-	//  Открываем необходимые файлы (Ласточка, льготники и копию льготников(надо ли?))
-	lastochka_file, err := excelize.OpenFile("Ласточка 2021.xlsm")
-	if err != nil {
-		log.Fatal(err)
-	}
+// Функция выбора месяца, возвращяет ячейку таблицы для дальнейшей обработки
+func select_month_cell() int {
 
 	var month int
-	var month_cell int
 
 	fmt.Println("Введите номер месяца, на который делаем расчет:")
-	fmt.Println("---------------")
+	fmt.Println("________________")
 	fmt.Println("1  - Январь")
 	fmt.Println("2  - Февраль")
 	fmt.Println("3  - Март")
@@ -32,23 +27,24 @@ func main() {
 	fmt.Println("10 - Октябрь")
 	fmt.Println("11 - Ноябрь")
 	fmt.Println("12 - Декабрь")
-	fmt.Println("===============")
+	fmt.Println("================")
 	fmt.Print("-> ")
 	fmt.Scanln(&month)
 	fmt.Println()
 
-	// month_index := [13]int{14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26}
-	month_index := [13]int{15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27}
-
-	if month < 1 || month > 12 {
-		fmt.Println("ERROR :: Неправильно введён месяц!")
-		fmt.Println()
-	} else {
-		fmt.Println("OK")
-		fmt.Println()
-		month_cell = month_index[month]
+	for (month < 1) || (month > 12) {
+		fmt.Println("ERROR: Неправильно введён месяц!")
+		fmt.Print("-> ")
+		fmt.Scanln(&month)
 	}
 
+	month_index := [13]int{15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27}
+
+	return month_index[month]
+}
+
+// Функция генерации тарифов в 'map'
+func generate_tariffs(file *excelize.File) map[string]float64 {
 	tariff_cells := [6]string{
 		"D2504",
 		"D2505",
@@ -67,19 +63,34 @@ func main() {
 		"Электроэнергия",
 	}
 
-	tariffs := make(map[string]float64)
+	tariff := make(map[string]float64)
 
 	for idx, el := range tariff_cells {
-		cell, err := lastochka_file.GetCellValue("Квитанции_чистые", el)
+		cell, err := file.GetCellValue("Квитанции_чистые", el)
 		if err != nil {
 			log.Fatal(err)
 		}
 		if cellfloat, err := strconv.ParseFloat(cell, 64); err == nil {
-			tariffs[tariff_names[idx]] = cellfloat
+			tariff[tariff_names[idx]] = cellfloat
+		} else {
+			log.Fatal(err)
 		}
 	}
+	return tariff
+}
 
-	// -- Для проверки печатаем тарифы на экран
+func main() {
+	//  Открываем необходимые файлы (Ласточка, льготники и копию льготников(надо ли?))
+	lastochka_file, err := excelize.OpenFile("Ласточка 2021.xlsm")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	month_cell := select_month_cell() // Получаем месяц, с которым работаем
+
+	tariffs := generate_tariffs(lastochka_file) // Генерация 'map' с тарифами
+
+	// -- TEST -- Для проверки печатаем тарифы на экран
 	for idx, el := range tariffs {
 		fmt.Println(idx, "\t", el)
 	}
