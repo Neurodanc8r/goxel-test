@@ -19,7 +19,7 @@ func main() {
 	var month_cell int
 
 	fmt.Println("Введите номер месяца, на который делаем расчет:")
-	fmt.Println("-----------------")
+	fmt.Println("---------------")
 	fmt.Println("1  - Январь")
 	fmt.Println("2  - Февраль")
 	fmt.Println("3  - Март")
@@ -32,12 +32,12 @@ func main() {
 	fmt.Println("10 - Октябрь")
 	fmt.Println("11 - Ноябрь")
 	fmt.Println("12 - Декабрь")
-	fmt.Println("-----------------")
-	fmt.Print("::>")
+	fmt.Println("===============")
+	fmt.Print("-> ")
 	fmt.Scanln(&month)
 	fmt.Println()
 
-	//month_index := [13]int{14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26}
+	// month_index := [13]int{14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26}
 	month_index := [13]int{15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27}
 
 	if month < 1 || month > 12 {
