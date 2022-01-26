@@ -101,7 +101,7 @@ func read_gen_flat_info(file *excelize.File, month_cell int) []Flat {
 
 	// Перебираем строки, заносим в структуру и её в структуру общую
 	for idx, row := range rows {
-		if idx == 0 {
+		if idx < 8 || idx == 88 || idx == 89 || idx == 107 || idx == 124 {
 			CurrentFlat.number = 0
 			CurrentFlat.owner = "void"
 			CurrentFlat.area = 0
@@ -110,6 +110,10 @@ func read_gen_flat_info(file *excelize.File, month_cell int) []Flat {
 			continue
 		}
 		if idx < 129 {
+			if month_cell > len(row) {
+				fmt.Println("ОШИБКА: индекс месяца превышает длину строки!")
+				log.Fatal(month_cell)
+			}
 			current_month, err = strconv.Atoi(row[month_cell])
 			if err != nil {
 				if row[month_cell] == "" {
@@ -268,7 +272,7 @@ func record_out(rec_file *excelize.File, House []Flat, tariffs map[string]float6
 
 func main() {
 	// Открываем входной файл с информацией (Ласточка) {новый будет Ласточка 2022_v1.xlsm}
-	lastochka_file, err := excelize.OpenFile("Ласточка 2021.xlsm")
+	lastochka_file, err := excelize.OpenFile("Ласточка_2022_1.xlsm")
 	if err != nil {
 		fmt.Println("ОШИБКА: Ошибка чтения входного файла ! (Ласточка)")
 		log.Fatal(err)
