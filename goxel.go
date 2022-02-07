@@ -46,12 +46,12 @@ func select_month_cell() int {
 // Функция генерации тарифов в 'map'
 func generate_tariffs(file *excelize.File) map[string]float64 {
 	tariff_cells := [6]string{
-		"D2504",
-		"D2505",
-		"D2506",
-		"D2507",
-		"D2509",
-		"B2499",
+		cfg.T_odn_hvs,
+		cfg.T_odn_gvs,
+		cfg.T_odn_elec,
+		cfg.T_odn_voda,
+		cfg.T_soderzh,
+		cfg.T_electro,
 	}
 
 	tariff_names := [6]string{
@@ -66,7 +66,7 @@ func generate_tariffs(file *excelize.File) map[string]float64 {
 	tariff := make(map[string]float64)
 
 	for idx, el := range tariff_cells {
-		cell, err := file.GetCellValue("Квитанции_чистые", el)
+		cell, err := file.GetCellValue(cfg.In_tariffs, el)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -90,7 +90,7 @@ type Flat struct {
 // Функция читает инфо из входного файла и формирует срез структур 'House'
 func read_gen_flat_info(file *excelize.File, month_cell int) []Flat {
 	// Перебираем входной документ построчно
-	rows, err := file.GetRows("Жильцы")
+	rows, err := file.GetRows(cfg.In_owners)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -166,7 +166,7 @@ func record_out(rec_file *excelize.File, House []Flat, tariffs map[string]float6
 		"FACTOP2": "W",
 	}
 
-	out_rows, err := rec_file.GetRows("Лист1")
+	out_rows, err := rec_file.GetRows(cfg.Out_sheet)
 	if err != nil {
 		fmt.Println("ОШИБКА: Ошибка чтения выходного файла !")
 		log.Fatal(err)
@@ -272,7 +272,7 @@ func record_out(rec_file *excelize.File, House []Flat, tariffs map[string]float6
 
 func main() {
 	// Открываем входной файл с информацией (Ласточка) {новый будет Ласточка 2022_v1.xlsm}
-	lastochka_file, err := excelize.OpenFile("Ласточка_2022_1.xlsm")
+	lastochka_file, err := excelize.OpenFile(cfg.In_file)
 	if err != nil {
 		fmt.Println("ОШИБКА: Ошибка чтения входного файла ! (Ласточка)")
 		log.Fatal(err)
@@ -285,7 +285,7 @@ func main() {
 	House := read_gen_flat_info(lastochka_file, month_cell) // Получаем и храним в памяти информацию по квартирам
 
 	// Открываем выходной файл по льготникам
-	rec_file, err := excelize.OpenFile("SZS_rec.xlsx")
+	rec_file, err := excelize.OpenFile(cfg.Out_file)
 	if err != nil {
 		fmt.Println("ОШИБКА: Ошибка чтения выходного файла ! (по льготникам)")
 		log.Fatal(err)
@@ -294,7 +294,7 @@ func main() {
 	record_out(rec_file, House, tariffs) // Пишем в выходной файл (льготники)
 
 	// Сохраняем выходной файл
-	if err := rec_file.SaveAs("Book1.xlsx"); err != nil {
+	if err := rec_file.SaveAs(cfg.Out_file); err != nil {
 		fmt.Println("ОШИБКА: Ошибка записи выходного файла ! (по льготникам)")
 		fmt.Println(err)
 	} else {
